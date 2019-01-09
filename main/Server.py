@@ -10,7 +10,7 @@ from datetime import datetime
 class Server(Thread):
     def __init__(self, chunksize, ackq, clientq, serverq, mode,scheme, mu, sigma, load, ackdelay = 1):
         super(Server,self).__init__()
-        print("server init")
+        print("Server: initiliazed")
         self.filesize = 100
         self.chunksize = chunksize
         self.ackq = ackq
@@ -26,7 +26,7 @@ class Server(Thread):
         self.rtt = np.random.normal(mu, sigma, 100)
         #print(self.rtt)
         self.totaldelay = 0
-        print(datetime.now())
+
         if self.mode == "send":
             for i in range(math.ceil(self.filesize/self.chunksize)):
                 serverq.put(i)
@@ -39,7 +39,9 @@ class Server(Thread):
         print("Server: receiving files...")
         print("Server: " + self.scheme + " scheme")
         receivedchunks = 0
-        receivetime = 0
+        waitingacks = 0
+        receivedtimes = []
+        timedif = datetime.now() - datetime.now()
         while not self._stopevent.isSet():
             if self.scheme == "sequential":
                 if not self.serverq.empty():
@@ -55,29 +57,33 @@ class Server(Thread):
             #delayed scheme
             else:
                 if not self.serverq.empty():
+                    receivedchunks += 1
+                    waitingacks += 1
                     chunk = self.serverq.get()
                     print(self.getName() + ": received " + str(chunk))
-                    receivedchunks += 1
-                    receivetime = datetime.now()
-                    timedif = datetime.now() - receivetime
+                    receivedtimes.append(datetime.now())
+
                     if(receivedchunks % self.ackdelay == 0):
                         ack = "ack"
                         print(self.getName() + ": send " + ack)
                         self.ackq.put(ack)
+                        waitingacks = 0
                         self.totaldelay += self.load
                         self.totaldelay += self.rtt[receivedchunks]
                         self.totaldelay += (self.rtt[receivedchunks + 1] / 2)
-                    elif(int(timedif.total_seconds() * 1000) > 100):
+
+                elif(waitingacks >= 1):
+                    timedif = datetime.now() - receivedtimes[receivedchunks-1]
+                    #print(int(timedif.total_seconds() * 1000))
+                    if(int(timedif.total_seconds() * 1000) > 100):
                         ack = "ack"
+                        print(self.getName() + ": timeout expired!")
                         print(self.getName() + ": send " + ack)
+                        waitingacks = 0
                         self.ackq.put(ack)
+                        self.totaldelay += 100 #timeout value
                         self.totaldelay += self.load
                         self.totaldelay += self.rtt[receivedchunks]
-
-
-                    #print(receivedchunks)
-
-
 
         return
 

@@ -10,7 +10,7 @@ import queue
 class Client(Thread):
     def __init__(self, chunksize, ackq, clientq, serverq, mode,scheme, ackdelay = 1):
         super(Client,self).__init__()
-        print("client init")
+        print("Client: initialized")
         self.filesize = 100
         self.chunksize = chunksize
         self.ackq = ackq
@@ -65,7 +65,7 @@ class Client(Thread):
                             print(self.getName() + " send " + str(chunk))
                             self.serverq.put(chunk)
                     else:
-                        if not self.clienq.empty():
+                        if not self.clientq.empty():
                             for i in range(self.clientq.qsize()):
                                 chunk = self.clientq.get()
                                 print(self.getName() + " send " + str(chunk))
