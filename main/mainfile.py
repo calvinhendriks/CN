@@ -12,19 +12,22 @@ if __name__ =='__main__':
     serverq = queue.Queue()
     ackq = queue.Queue()
 
-
-
-    s = Server(4, ackq, clientq, serverq, "receive" , "sequential" )
+    s = Server(4, ackq, clientq, serverq, "receive" , "sequential" , 100, 20,50)
     c = Client(4, ackq, clientq, serverq, "send", "sequential")
+
+    #s = Server(4, ackq, clientq, serverq, "receive" , "delayed" , 100, 20,50,2)
+    #c = Client(4, ackq, clientq, serverq, "send", "delayed", 2)
+
     s.setName("Server")
     c.setName("Client")
     s.start()
-    print("debug")
     c.start()
     c.join()
 
     while True:
         if not c.is_alive():
+            delay = s.get_delay()
+            print(delay)
             s.join()
             sys.exit()
 
