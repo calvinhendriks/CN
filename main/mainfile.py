@@ -13,6 +13,7 @@ if __name__ =='__main__':
     ackq = queue.Queue()
 
 
+
     s = Server(4, ackq, clientq, serverq, "receive" , "sequential" )
     c = Client(4, ackq, clientq, serverq, "send", "sequential")
     s.setName("Server")
