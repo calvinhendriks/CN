@@ -5,12 +5,14 @@ import time
 import queue
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy as sc
 from datetime import datetime
+from scipy.stats import truncnorm
 
 class Server(Thread):
-    def __init__(self, chunksize, ackq, clientq, serverq, mode,scheme, mu, sigma, load, ackdelay = 1):
+    def __init__(self, chunksize, ackq, clientq, serverq, mode, scheme, rtt, load, ackdelay = 1):
         super(Server,self).__init__()
-        print("Server: initiliazed")
+        # print("Server: initiliazed")
         self.filesize = 100
         self.chunksize = chunksize
         self.ackq = ackq
@@ -18,13 +20,12 @@ class Server(Thread):
         self.serverq = serverq
         self.mode = mode
         self.scheme = scheme
-        self.mu = mu
-        self.sigma = sigma
+        self.rtt = rtt
         self.load = load
         self.ackdelay = ackdelay
         self._stopevent = threading.Event(  )
-        self.rtt = np.random.normal(mu, sigma, 100)
-        #print(self.rtt)
+
+
         self.totaldelay = 0
 
         if self.mode == "send":
@@ -36,8 +37,8 @@ class Server(Thread):
         print("server: sendfiles() called")
 
     def receivefiles(self):
-        print("Server: receiving files...")
-        print("Server: " + self.scheme + " scheme")
+        # print("Server: receiving files...")
+        # ("Server: " + self.scheme + " scheme")
         receivedchunks = 0
         waitingacks = 0
         receivedtimes = []
@@ -46,11 +47,11 @@ class Server(Thread):
             if self.scheme == "sequential":
                 if not self.serverq.empty():
                     chunk = self.serverq.get()
-                    print(self.getName() + ": received " + str(chunk))
+                    # print(self.getName() + ": received " + str(chunk))
                     receivedchunks += 1
-                    #print(receivedchunks)
+                    # print(receivedchunks)
                     ack = "ack"
-                    print(self.getName() + ": send " + ack)
+                    # print(self.getName() + ": send " + ack)
                     self.ackq.put(ack)
                     self.totaldelay += self.load
                     self.totaldelay += self.rtt[receivedchunks]
@@ -60,12 +61,12 @@ class Server(Thread):
                     receivedchunks += 1
                     waitingacks += 1
                     chunk = self.serverq.get()
-                    print(self.getName() + ": received " + str(chunk))
+                    # print(self.getName() + ": received " + str(chunk))
                     receivedtimes.append(datetime.now())
 
                     if(receivedchunks % self.ackdelay == 0):
                         ack = "ack"
-                        print(self.getName() + ": send " + ack)
+                        # print(self.getName() + ": send " + ack)
                         self.ackq.put(ack)
                         waitingacks = 0
                         self.totaldelay += self.load
@@ -74,14 +75,14 @@ class Server(Thread):
 
                 elif(waitingacks >= 1):
                     timedif = datetime.now() - receivedtimes[receivedchunks-1]
-                    #print(int(timedif.total_seconds() * 1000))
+                    # print(int(timedif.total_seconds() * 1000))
                     if(int(timedif.total_seconds() * 1000) > 100):
                         ack = "ack"
                         print(self.getName() + ": timeout expired!")
-                        print(self.getName() + ": send " + ack)
+                        # print(self.getName() + ": send " + ack)
                         waitingacks = 0
                         self.ackq.put(ack)
-                        self.totaldelay += 100 #timeout value
+                        self.totaldelay += 0 #timeout value
                         self.totaldelay += self.load
                         self.totaldelay += self.rtt[receivedchunks]
 
