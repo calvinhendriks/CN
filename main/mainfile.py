@@ -5,6 +5,7 @@ import scipy.stats as stats
 from threading import Thread
 import queue
 import sys
+import matplotlib.pyplot as plt
 
 
 if __name__ =='__main__':
@@ -144,8 +145,36 @@ if __name__ =='__main__':
         print(chunkseq)
         print(chunkdel)
 
+    titles = np.array(np.zeros(repetitions*2))
+    rttmeans = np.array(np.zeros(repetitions*2))
+    rttstds = np.array(np.zeros(repetitions*2))
+
     for mean in means:
+        np.append(titles,str(mean)+"seq")
+        np.append(titles,str(mean)+"del")
         rttseq = rttresult[np.logical_and(rttresult['scheme'] == 'seq', rttresult['mean'] == mean[0])]
         rttdel = rttresult[np.logical_and(rttresult['scheme'] == 'del', rttresult['mean'] == mean[0])]
         print(rttseq)
         print(rttdel)
+        rttseqmean = np.mean(rttseq['value'])
+        rttdelmean = np.mean(rttdel['value'])
+        np.append(rttmeans,rttseqmean)
+        np.append(rttmeans,rttdelmean)
+        rttseqstd = np.std(rttseq['value'])
+        rttdelstd = np.std(rttseq['value'])
+        np.append(rttstds,rttseqstd)
+        np.append(rttstds,rttdelstd)
+
+    x_pos = np.arange(len(titles))
+    fig, ax = plt.subplots()
+    ax.bar(x_pos, rttmeans, yerr=rttstds, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax.set_ylabel('Time (ms)')
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(titles)
+    ax.set_title('RTTs')
+    ax.yaxis.grid(True)
+
+    # Save the figure and show
+    plt.tight_layout()
+    plt.savefig('bar_plot_with_error_bars.png')
+    plt.show()
