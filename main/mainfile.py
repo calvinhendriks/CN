@@ -14,48 +14,96 @@ if __name__ =='__main__':
     #ARGUMENTS
     repetitions = 5
     chunksizes = [1,4,5,8]
-    means = [10, 50, 100, 150]
-    stddevs = [8.8, 44, 88, 132]
+    means = [(10,8.8), (50,44), (100,88), (150,132)]
+    #stddevs = [8.8, 44, 88, 132]
     serverload = [10,100,300]
 
     #RESULT ARRAYS
     # Use a compound data type for structured arrays
-    dt = np.dtype([('scheme', np.unicode_, 16), ('size', np.int32), ('value', np.float64, (repetitions,))])
+    dt = np.dtype([('scheme', np.unicode_, 16), ('chunksize', np.int32), ('value', np.float64, (1,))])
 
-    chunkresult = np.array([('seq', 1 , np.zeros(repetitions)),('seq', 4 , np.zeros(repetitions)),
-                     ('seq', 5 , np.zeros(repetitions)),('seq', 8 , np.zeros(repetitions)),
-                     ('del', 1 , np.zeros(repetitions)),('del', 4 , np.zeros(repetitions)),
-                     ('del', 5 , np.zeros(repetitions)) ,('del', 8 , np.zeros(repetitions))  ], dtype=dt)
+    chunkresult = np.array([('seq', 1 , np.zeros(1)),('seq', 4 , np.zeros(1)),
+                     ('seq', 5 , np.zeros(1)),('seq', 8 , np.zeros(1)),
+                     ('del', 1 , np.zeros(1)),('del', 4 , np.zeros(1)),
+                     ('del', 5 , np.zeros(1)) ,('del', 8 , np.zeros(1))  ], dtype=dt)
+
+    dt = np.dtype([('scheme', np.unicode_, 16), ('mean', np.int32), ('value', np.float64, (repetitions,))])
+    rttresult = np.array([('seq', 10 , np.zeros(repetitions)),('seq', 50 , np.zeros(repetitions)),
+                          ('seq', 100 , np.zeros(repetitions)),('seq', 150 , np.zeros(repetitions)),
+                          ('del', 10 , np.zeros(repetitions)),('del', 50 , np.zeros(repetitions)),
+                          ('del', 100 , np.zeros(repetitions)) ,('del', 150 , np.zeros(repetitions))  ], dtype=dt)
 
     #Other
     rtt100 = []
     for i in range(1000):
         rtt100.append(100)
 
-    lower, upper = 1, 1000
-    mu, sigma = 12, 10.56
-    X = stats.truncnorm(
-        (lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma)
-    # N = stats.norm(loc=mu, scale=sigma)
-    rtt = X.rvs(size=100)
 
 
+    #+++++++++++++++++++++Chunks++++++++++++++++++++++++++++++++++++++++++
+    clientq = queue.Queue()
+    serverq = queue.Queue()
+    ackq = queue.Queue()
+    for size in chunksizes:
 
+        #++++++++++++++++++++++Sequential++++++++++++++++++++++++++++++
+
+        s = Server(size, ackq, clientq, serverq, "receive" , "sequential" , rtt100, 10)
+        c = Client(size, ackq, clientq, serverq, "send", "sequential")
+
+        s.setName("Server")
+        c.setName("Client")
+        s.start()
+        c.start()
+        c.join()
+
+        while True:
+            if not c.is_alive():
+                delay = s.get_delay()
+                chunkresult['value'][:,0][np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['chunksize'] == size)] = delay
+                s.join()
+
+                break
+                #sys.exit()
+
+        #++++++++++++++++++++++Delayed++++++++++++++++++++++++++++++
+
+
+        s = Server(size, ackq, clientq, serverq, "receive" , "delayed" , rtt100, 10, 2)
+        c = Client(size, ackq, clientq, serverq, "send", "delayed", 2)
+
+        s.setName("Server")
+        c.setName("Client")
+        s.start()
+        c.start()
+        c.join()
+
+        while True:
+            if not c.is_alive():
+                delay = s.get_delay()
+                chunkresult['value'][:,0][np.logical_and(chunkresult['scheme'] == 'del', chunkresult['chunksize'] == size)] = delay
+                s.join()
+
+                break
+
+    #+++++++++++++++++++++RTT++++++++++++++++++++++++++++++++++++++++++
 
     for x in range(repetitions):
-        clientq = queue.Queue()
-        serverq = queue.Queue()
-        ackq = queue.Queue()
         print(x)
 
-        #+++++++++++++++++++++Chunks++++++++++++++++++++++++++++++++++++++++++
+        for value in means:
 
-        for y in range(len(chunksizes)):
+            lower, upper = 1, 1000
+            mu, sigma = value[0], value[1]
+            X = stats.truncnorm(
+            (lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma)
+            # N = stats.norm(loc=mu, scale=sigma)
+            rtt = X.rvs(size=1000)
 
             #++++++++++++++++++++++Sequential++++++++++++++++++++++++++++++
 
-            s = Server(chunksizes[y], ackq, clientq, serverq, "receive" , "sequential" , rtt100, 10)
-            c = Client(chunksizes[y], ackq, clientq, serverq, "send", "sequential")
+            s = Server(4, ackq, clientq, serverq, "receive" , "sequential" , rtt, 10)
+            c = Client(4, ackq, clientq, serverq, "send", "sequential")
 
             s.setName("Server")
             c.setName("Client")
@@ -66,23 +114,15 @@ if __name__ =='__main__':
             while True:
                 if not c.is_alive():
                     delay = s.get_delay()
-                    if(chunksizes[y] == 1):
-                        chunkresult['value'][:,x][np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['size'] == 1)] = delay
-                    elif(chunksizes[y] == 4):
-                        chunkresult['value'][:,x][np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['size'] == 4)] = delay
-                    if(chunksizes[y] == 5):
-                        chunkresult['value'][:,x][np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['size'] == 5)] = delay
-                    elif(chunksizes[y] == 8):
-                        chunkresult['value'][:,x][np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['size'] == 8)] = delay
+                    rttresult['value'][:,x][np.logical_and(rttresult['scheme'] == 'seq', rttresult['mean'] == value[0])] = delay
                     s.join()
-
                     break
                     #sys.exit()
 
             #++++++++++++++++++++++Delayed++++++++++++++++++++++++++++++
 
 
-            s = Server(4, ackq, clientq, serverq, "receive" , "delayed" , rtt100, 10, 2)
+            s = Server(4, ackq, clientq, serverq, "receive" , "delayed" , rtt, 10,2)
             c = Client(4, ackq, clientq, serverq, "send", "delayed", 2)
 
             s.setName("Server")
@@ -94,69 +134,18 @@ if __name__ =='__main__':
             while True:
                 if not c.is_alive():
                     delay = s.get_delay()
-                    if(chunksizes[y] == 1):
-                        chunkresult['value'][:,x][np.logical_and(chunkresult['scheme'] == 'del', chunkresult['size'] == 1)] = delay
-                    elif(chunksizes[y] == 4):
-                        chunkresult['value'][:,x][np.logical_and(chunkresult['scheme'] == 'del', chunkresult['size'] == 4)] = delay
-                    if(chunksizes[y] == 5):
-                        chunkresult['value'][:,x][np.logical_and(chunkresult['scheme'] == 'del', chunkresult['size'] == 5)] = delay
-                    elif(chunksizes[y] == 8):
-                        chunkresult['value'][:,x][np.logical_and(chunkresult['scheme'] == 'del', chunkresult['size'] == 8)] = delay
+                    rttresult['value'][:,x][np.logical_and(rttresult['scheme'] == 'del', rttresult['mean'] == value[0])] = delay
                     s.join()
-
                     break
 
-        # #+++++++++++++++++++++RTT++++++++++++++++++++++++++++++++++++++++++
-        #
-        # for y in range(means):
-        #
-        #     #++++++++++++++++++++++Sequential++++++++++++++++++++++++++++++
-        #
-        #     s = Server(1, ackq, clientq, serverq, "receive" , "sequential" , 100, 20,50)
-        #     c = Client(1, ackq, clientq, serverq, "send", "sequential")
-        #
-        #     s.setName("Server")
-        #     c.setName("Client")
-        #     s.start()
-        #     c.start()
-        #     c.join()
-        #
-        #     while True:
-        #         if not c.is_alive():
-        #             delay = s.get_delay()
-        #             chunkresult = np.append(chunk,delay)
-        #             print(delay)
-        #             s.join()
-        #             break
-        #             #sys.exit()
-        #
-        #     #++++++++++++++++++++++Delayed++++++++++++++++++++++++++++++
-        #
-        #
-        #     s = Server(4, ackq, clientq, serverq, "receive" , "delayed" , 100, 20,50,2)
-        #     c = Client(4, ackq, clientq, serverq, "send", "delayed", 2)
-        #
-        #     s.setName("Server")
-        #     c.setName("Client")
-        #     s.start()
-        #     c.start()
-        #     c.join()
-        #
-        #     while True:
-        #         if not c.is_alive():
-        #             delay = s.get_delay()
-        #             print(delay)
-        #             s.join()
-        #             break
+    for size in chunksizes:
+        chunkseq = chunkresult[np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['chunksize'] == size)]
+        chunkdel = chunkresult[np.logical_and(chunkresult['scheme'] == 'del', chunkresult['chunksize'] == size)]
+        print(chunkseq)
+        print(chunkdel)
 
-    chunk1 = chunkresult[np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['size'] == 1)]
-    print(chunk1)
-
-    chunk4 = chunkresult[np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['size'] == 4)]
-    print(chunk4)
-
-    chunk5 = chunkresult[np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['size'] == 5)]
-    print(chunk5)
-
-    chunk8 = chunkresult[np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['size'] == 8)]
-    print(chunk8)
+    for mean in means:
+        rttseq = rttresult[np.logical_and(rttresult['scheme'] == 'seq', rttresult['mean'] == mean[0])]
+        rttdel = rttresult[np.logical_and(rttresult['scheme'] == 'del', rttresult['mean'] == mean[0])]
+        print(rttseq)
+        print(rttdel)
