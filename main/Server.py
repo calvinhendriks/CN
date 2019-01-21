@@ -10,7 +10,7 @@ from datetime import datetime
 from scipy.stats import truncnorm
 
 class Server(Thread):
-    def __init__(self, chunksize, ackq, clientq, serverq, mode, scheme, rtt, load, ackdelay = 1):
+    def __init__(self, chunksize, ackq, clientq, serverq, mode, scheme, rtt, load, ackdelay = 1, bandwith = 54):
         super(Server,self).__init__()
         # print("Server: initiliazed")
         self.filesize = 100
@@ -23,10 +23,13 @@ class Server(Thread):
         self.rtt = rtt
         self.load = load
         self.ackdelay = ackdelay
+        self.bandwith = bandwith
+        print(self.bandwith)
         self._stopevent = threading.Event(  )
 
 
         self.totaldelay = 0
+
 
         if self.mode == "send":
             for i in range(math.ceil(self.filesize/self.chunksize)):
@@ -55,6 +58,7 @@ class Server(Thread):
                     self.ackq.put(ack)
                     self.totaldelay += self.load
                     self.totaldelay += self.rtt[receivedchunks]
+                    self.totaldelay += (self.chunksize * 8 / self.bandwith) * 1000
             #delayed scheme
             else:
                 if not self.serverq.empty():
@@ -71,6 +75,7 @@ class Server(Thread):
                         waitingacks = 0
                         self.totaldelay += self.load
                         self.totaldelay += self.rtt[receivedchunks]
+                        self.totaldelay += ((self.chunksize * 8 / self.bandwith) * 2) * 1000
                         self.totaldelay += (self.rtt[receivedchunks + 1] / 2)
 
                 elif(waitingacks >= 1):
@@ -84,7 +89,9 @@ class Server(Thread):
                         self.ackq.put(ack)
                         self.totaldelay += 0 #timeout value
                         self.totaldelay += self.load
+                        self.totaldelay += (self.chunksize * 8 / self.bandwith) * 1000
                         self.totaldelay += self.rtt[receivedchunks]
+
 
         return
 

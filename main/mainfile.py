@@ -18,6 +18,7 @@ if __name__ =='__main__':
     means = [(10,8.8), (50,44), (100,88), (150,132)]
     #stddevs = [8.8, 44, 88, 132]
     serverload = [10,100,300]
+    bandwith = [4,54,190,1000]
 
     #RESULT ARRAYS
     # Use a compound data type for structured arrays
@@ -26,14 +27,19 @@ if __name__ =='__main__':
     chunkresult = np.array([('seq', 1 , np.zeros(1)),('seq', 4 , np.zeros(1)),
                      ('seq', 5 , np.zeros(1)),('seq', 8 , np.zeros(1)),
                      ('del', 1 , np.zeros(1)),('del', 4 , np.zeros(1)),
-                     ('del', 5 , np.zeros(1)) ,('del', 8 , np.zeros(1))  ], dtype=dt)
+                     ('del', 5 , np.zeros(1)) ,('del', 8 , np.zeros(1))], dtype=dt)
 
     dt = np.dtype([('scheme', np.unicode_, 16), ('mean', np.int32), ('value', np.float64, (repetitions,))])
     rttresult = np.array([('seq', 10 , np.zeros(repetitions)),('seq', 50 , np.zeros(repetitions)),
                           ('seq', 100 , np.zeros(repetitions)),('seq', 150 , np.zeros(repetitions)),
                           ('del', 10 , np.zeros(repetitions)),('del', 50 , np.zeros(repetitions)),
-                          ('del', 100 , np.zeros(repetitions)) ,('del', 150 , np.zeros(repetitions))  ], dtype=dt)
+                          ('del', 100 , np.zeros(repetitions)) ,('del', 150 , np.zeros(repetitions))], dtype=dt)
 
+    dt = np.dtype([('scheme', np.unicode_, 16), ('bandwith', np.int32), ('value', np.float64, (1,))])
+    bandwithresult = np.array([('seq', 4 , np.zeros(1)),('seq', 54 , np.zeros(1)),
+                                ('seq', 190 , np.zeros(1)),('seq', 1000 , np.zeros(1)),
+                                ('del', 4 , np.zeros(1)),('del', 54 , np.zeros(1)),
+                               ('del', 190 , np.zeros(1)),('del', 1000 , np.zeros(1))], dtype=dt)
     #Other
     rtt100 = []
     for i in range(1000):
@@ -42,10 +48,11 @@ if __name__ =='__main__':
 
 
     #+++++++++++++++++++++Chunks++++++++++++++++++++++++++++++++++++++++++
-    clientq = queue.Queue()
-    serverq = queue.Queue()
-    ackq = queue.Queue()
+
     for size in chunksizes:
+        clientq = queue.Queue()
+        serverq = queue.Queue()
+        ackq = queue.Queue()
 
         #++++++++++++++++++++++Sequential++++++++++++++++++++++++++++++
 
@@ -68,6 +75,9 @@ if __name__ =='__main__':
                 #sys.exit()
 
         #++++++++++++++++++++++Delayed++++++++++++++++++++++++++++++
+        clientq = queue.Queue()
+        serverq = queue.Queue()
+        ackq = queue.Queue()
 
 
         s = Server(size, ackq, clientq, serverq, "receive" , "delayed" , rtt100, 10, 2)
@@ -102,6 +112,9 @@ if __name__ =='__main__':
             rtt = X.rvs(size=1000)
 
             #++++++++++++++++++++++Sequential++++++++++++++++++++++++++++++
+            clientq = queue.Queue()
+            serverq = queue.Queue()
+            ackq = queue.Queue()
 
             s = Server(4, ackq, clientq, serverq, "receive" , "sequential" , rtt, 10)
             c = Client(4, ackq, clientq, serverq, "send", "sequential")
@@ -122,6 +135,9 @@ if __name__ =='__main__':
 
             #++++++++++++++++++++++Delayed++++++++++++++++++++++++++++++
 
+            clientq = queue.Queue()
+            serverq = queue.Queue()
+            ackq = queue.Queue()
 
             s = Server(4, ackq, clientq, serverq, "receive" , "delayed" , rtt, 10,2)
             c = Client(4, ackq, clientq, serverq, "send", "delayed", 2)
@@ -139,11 +155,70 @@ if __name__ =='__main__':
                     s.join()
                     break
 
+
+
+    #+++++++++++++++++++++Bandwith++++++++++++++++++++++++++++++++++++++++++
+    for speed in bandwith:
+        print(speed)
+        #++++++++++++++++++++++Sequential++++++++++++++++++++++++++++++
+        clientq = queue.Queue()
+        serverq = queue.Queue()
+        ackq = queue.Queue()
+
+        s = Server(4, ackq, clientq, serverq, "receive" , "sequential" , rtt100, 10, 1, speed)
+        c = Client(4, ackq, clientq, serverq, "send", "sequential")
+
+        s.setName("Server")
+        c.setName("Client")
+        s.start()
+        c.start()
+        c.join()
+
+        while True:
+            if not c.is_alive():
+                delay = s.get_delay()
+                bandwithresult['value'][:,0][np.logical_and(bandwithresult['scheme'] == 'seq', bandwithresult['bandwith'] == speed)] = delay
+                s.join()
+
+                break
+                #sys.exit()
+
+        #++++++++++++++++++++++Delayed++++++++++++++++++++++++++++++
+
+        clientq = queue.Queue()
+        serverq = queue.Queue()
+        ackq = queue.Queue()
+
+        s = Server(4, ackq, clientq, serverq, "receive" , "delayed" , rtt100, 10, 2,speed)
+        c = Client(4, ackq, clientq, serverq, "send", "delayed", 2)
+
+        s.setName("Server")
+        c.setName("Client")
+        s.start()
+        c.start()
+        c.join()
+
+        while True:
+            if not c.is_alive():
+                delay = s.get_delay()
+                bandwithresult['value'][:,0][np.logical_and(bandwithresult['scheme'] == 'del', bandwithresult['bandwith'] == speed)] = delay
+                s.join()
+
+                break
+
+    ####Graphs#####################
+
     for size in chunksizes:
         chunkseq = chunkresult[np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['chunksize'] == size)]
         chunkdel = chunkresult[np.logical_and(chunkresult['scheme'] == 'del', chunkresult['chunksize'] == size)]
         print(chunkseq)
         print(chunkdel)
+
+    for speed in bandwith:
+        bandwithseq = bandwithresult[np.logical_and(bandwithresult['scheme'] == 'seq', bandwithresult['bandwith'] == speed)]
+        bandwithdel = bandwithresult[np.logical_and(bandwithresult['scheme'] == 'del', bandwithresult['bandwith'] == speed)]
+        print(bandwithseq)
+        print(bandwithdel)
 
     titles = np.array(np.zeros(repetitions*2))
     rttmeans = np.array(np.zeros(repetitions*2))
