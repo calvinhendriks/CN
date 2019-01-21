@@ -221,48 +221,56 @@ if __name__ =='__main__':
         print(bandwithdel)
 
     titles = []
-    rttmeans = [] #np.array(np.zeros(repetitions*2))
-    rttstds = [] #np.array(np.zeros(repetitions*2))
+    rttseqmeans = [] #np.array(np.zeros(repetitions*2))
+    rttseqstds = [] #np.array(np.zeros(repetitions*2))
+    rttdelmeans = []
+    rttdelstds = []
 
     for mean in means:
         titles.append(str(mean)+"seq")
         titles.append(str(mean)+"del")
         rttseq = rttresult[np.logical_and(rttresult['scheme'] == 'seq', rttresult['mean'] == mean[0])]
         rttdel = rttresult[np.logical_and(rttresult['scheme'] == 'del', rttresult['mean'] == mean[0])]
-        # print(rttseq)
-        # print(rttdel)
+
         rttseqmean = np.mean(rttseq['value'])
         rttdelmean = np.mean(rttdel['value'])
-        # print(rttseqmean)
-        # print(rttdelmean)
-        rttmeans.append(rttseqmean)
-        rttmeans.append(rttdelmean)
+        rttseqmeans.append(rttseqmean)
+        rttdelmeans.append(rttdelmean)
+
         rttseqstd = np.std(rttseq['value'])
-        rttdelstd = np.std(rttseq['value'])
-        rttstds.append(rttseqstd)
-        rttstds.append(rttdelstd)
+        rttdelstd = np.std(rttdel['value'])
+        rttseqstds.append(rttseqstd)
+        rttdelstds.append(rttdelstd)
 
 
-    print(titles)
-    print(rttmeans)
-    print(rttstds)
+    # print(titles)
+    # print(rttmeans)
+    # print(rttstds)
     titles = np.array(titles)
-    rttmeans = np.array(rttmeans)
-    rttstds = np.array(rttstds)
+    rttseqmeans = np.array(rttseqmeans)
+    rttdelmeans = np.array(rttdelmeans)
+    rttseqstds = np.array(rttseqstds)
+    rttdelstds = np.array(rttdelstds)
 
     print(titles)
-    print(rttmeans)
-    print(rttstds)
+    print(rttseqmeans)
+    print(rttdelmeans)
+    print(rttseqstds)
+    print(rttdelstds)
 
-    x_pos = np.arange(len(titles))
+    x_pos = np.arange(len(rttseqmeans))
+    width = 0.35 #width of the bars
+
     fig, ax = plt.subplots()
-    ax.bar(x_pos, rttmeans, yerr=rttstds, align='center', alpha=0.5, ecolor='black', capsize=10)
+    seqbar = ax.bar(x_pos, rttseqmeans, width, yerr=rttseqstds, align='center', alpha=0.5, ecolor='black', capsize=10)
+    delbar = ax.bar(x_pos + width, rttdelmeans, width , yerr=rttdelstds, align='center', alpha=0.5, ecolor='black', capsize=10)
     ax.set_ylabel('Time (ms)')
-    ax.set_xticks(x_pos)
-    ax.set_xticklabels(titles)
+    ax.set_xticks(x_pos + width / 2)
+    #ax.set_xticklabels(titles)
+    ax.set_xticklabels(('10', '50', '100', '150'))
     ax.set_title('RTTs')
     ax.yaxis.grid(True)
-
+    ax.legend((seqbar[0], delbar[0]), ('Sequential', 'Delayed'))
     # Save the figure and show
     plt.tight_layout()
     plt.savefig('bar_plot_with_error_bars.png')
