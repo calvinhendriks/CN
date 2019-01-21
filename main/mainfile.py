@@ -220,25 +220,39 @@ if __name__ =='__main__':
         print(bandwithseq)
         print(bandwithdel)
 
-    titles = np.array(np.zeros(repetitions*2))
-    rttmeans = np.array(np.zeros(repetitions*2))
-    rttstds = np.array(np.zeros(repetitions*2))
+    titles = []
+    rttmeans = [] #np.array(np.zeros(repetitions*2))
+    rttstds = [] #np.array(np.zeros(repetitions*2))
 
     for mean in means:
-        np.append(titles,str(mean)+"seq")
-        np.append(titles,str(mean)+"del")
+        titles.append(str(mean)+"seq")
+        titles.append(str(mean)+"del")
         rttseq = rttresult[np.logical_and(rttresult['scheme'] == 'seq', rttresult['mean'] == mean[0])]
         rttdel = rttresult[np.logical_and(rttresult['scheme'] == 'del', rttresult['mean'] == mean[0])]
-        print(rttseq)
-        print(rttdel)
+        # print(rttseq)
+        # print(rttdel)
         rttseqmean = np.mean(rttseq['value'])
         rttdelmean = np.mean(rttdel['value'])
-        np.append(rttmeans,rttseqmean)
-        np.append(rttmeans,rttdelmean)
+        # print(rttseqmean)
+        # print(rttdelmean)
+        rttmeans.append(rttseqmean)
+        rttmeans.append(rttdelmean)
         rttseqstd = np.std(rttseq['value'])
         rttdelstd = np.std(rttseq['value'])
-        np.append(rttstds,rttseqstd)
-        np.append(rttstds,rttdelstd)
+        rttstds.append(rttseqstd)
+        rttstds.append(rttdelstd)
+
+
+    print(titles)
+    print(rttmeans)
+    print(rttstds)
+    titles = np.array(titles)
+    rttmeans = np.array(rttmeans)
+    rttstds = np.array(rttstds)
+
+    print(titles)
+    print(rttmeans)
+    print(rttstds)
 
     x_pos = np.arange(len(titles))
     fig, ax = plt.subplots()

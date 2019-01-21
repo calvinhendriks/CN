@@ -24,7 +24,6 @@ class Server(Thread):
         self.load = load
         self.ackdelay = ackdelay
         self.bandwith = bandwith
-        print(self.bandwith)
         self._stopevent = threading.Event(  )
 
 
