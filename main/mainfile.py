@@ -206,19 +206,74 @@ if __name__ =='__main__':
 
                 break
 
-    ####Graphs#####################
+    ############################################Graphs###########################################
 
+    #####Chunksize#################
+    chunkseq = []
+    chunkdel = []
     for size in chunksizes:
-        chunkseq = chunkresult[np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['chunksize'] == size)]
-        chunkdel = chunkresult[np.logical_and(chunkresult['scheme'] == 'del', chunkresult['chunksize'] == size)]
-        print(chunkseq)
-        print(chunkdel)
+        a = chunkresult[np.logical_and(chunkresult['scheme'] == 'seq', chunkresult['chunksize'] == size)]['value']
+        #print(a[0][0])
+        chunkseq.append(a[0][0])
+        b = chunkresult[np.logical_and(chunkresult['scheme'] == 'del', chunkresult['chunksize'] == size)]['value']
+        #print(b[0][0])
+        chunkdel.append(b[0][0])
+    print("chunksize seq", chunkseq)
+    print("chunksize del", chunkdel)
+    chunkseq = np.array(chunkseq)
+    chunkdel = np.array(chunkdel)
 
+    x_pos = np.arange(len(chunkseq))
+    width = 0.35 #width of the bars
+    fig, ax  = plt.subplots()
+    chunkseqbar = ax.bar(x_pos, chunkseq, width, align='center', alpha=0.5, ecolor='black', capsize=10)
+    chunkdelbar = ax.bar(x_pos + width, chunkdel, width , align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax.set_ylabel('Time (ms)')
+    ax.set_xticks(x_pos + width / 2)
+    #ax.set_xticklabels(titles)
+    ax.set_xticklabels(chunksizes)
+    ax.set_title('Chunksizes')
+    ax.yaxis.grid(True)
+    ax.legend((chunkseqbar[0], chunkdelbar[0]), ('Sequential', 'Delayed'))
+    # Save the figure and show
+    plt.tight_layout()
+    plt.savefig('chunk_seq_del_graph.png')
+    plt.show()
+
+    #####Bandwith#################
+    bandwithseq = []
+    bandwithdel = []
     for speed in bandwith:
-        bandwithseq = bandwithresult[np.logical_and(bandwithresult['scheme'] == 'seq', bandwithresult['bandwith'] == speed)]
-        bandwithdel = bandwithresult[np.logical_and(bandwithresult['scheme'] == 'del', bandwithresult['bandwith'] == speed)]
-        print(bandwithseq)
-        print(bandwithdel)
+        a = bandwithresult[np.logical_and(bandwithresult['scheme'] == 'seq', bandwithresult['bandwith'] == speed)]['value']
+        bandwithseq.append(a[0][0])
+        b = bandwithresult[np.logical_and(bandwithresult['scheme'] == 'del', bandwithresult['bandwith'] == speed)]['value']
+        bandwithdel.append(b[0][0])
+    print("bandwith seq", bandwithseq)
+    print("bandwith del", bandwithdel)
+    bandwithseq = np.array(bandwithseq)
+    bandwithdel = np.array(bandwithdel)
+
+    x_pos = np.arange(len(chunkseq))
+    width = 0.35 #width of the bars
+    fig, ax  = plt.subplots()
+    bandwithseqbar = ax.bar(x_pos, bandwithseq, width, align='center', alpha=0.5, ecolor='black', capsize=10)
+    bandwithdelbar = ax.bar(x_pos + width, bandwithdel, width , align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax.set_ylabel('Time (ms)')
+    ax.set_xticks(x_pos + width / 2)
+    #ax.set_xticklabels(titles)
+    ax.set_xticklabels(bandwith)
+    ax.set_title('Bandwith')
+    ax.yaxis.grid(True)
+    ax.legend((bandwithseqbar[0], bandwithdelbar[0]), ('Sequential', 'Delayed'))
+    # Save the figure and show
+    plt.tight_layout()
+    plt.savefig('bandwith_seq_del_graph.png')
+    plt.show()
+
+
+    #####RTT########################
+
+
 
     titles = []
     rttseqmeans = [] #np.array(np.zeros(repetitions*2))
@@ -253,14 +308,13 @@ if __name__ =='__main__':
     rttdelstds = np.array(rttdelstds)
 
     print(titles)
-    print(rttseqmeans)
-    print(rttdelmeans)
-    print(rttseqstds)
-    print(rttdelstds)
+    print("rtt seq means" , rttseqmeans)
+    print("rtt del means", rttdelmeans)
+    print("rtt seq std", rttseqstds)
+    print("rtt del std", rttdelstds)
 
     x_pos = np.arange(len(rttseqmeans))
     width = 0.35 #width of the bars
-
     fig, ax = plt.subplots()
     seqbar = ax.bar(x_pos, rttseqmeans, width, yerr=rttseqstds, align='center', alpha=0.5, ecolor='black', capsize=10)
     delbar = ax.bar(x_pos + width, rttdelmeans, width , yerr=rttdelstds, align='center', alpha=0.5, ecolor='black', capsize=10)
@@ -273,5 +327,5 @@ if __name__ =='__main__':
     ax.legend((seqbar[0], delbar[0]), ('Sequential', 'Delayed'))
     # Save the figure and show
     plt.tight_layout()
-    plt.savefig('bar_plot_with_error_bars.png')
+    plt.savefig('rtt_seq_del_graph(errorbars).png')
     plt.show()
