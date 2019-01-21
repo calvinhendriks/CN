@@ -13,7 +13,7 @@ if __name__ =='__main__':
     #schemes: sequential, delayed
 
     #ARGUMENTS
-    repetitions = 5
+    repetitions = 20
     chunksizes = [1,4,5,8]
     means = [(10,8.8), (50,44), (100,88), (150,132)]
     #stddevs = [8.8, 44, 88, 132]
@@ -236,9 +236,10 @@ if __name__ =='__main__':
     ax.yaxis.grid(True)
     ax.legend((chunkseqbar[0], chunkdelbar[0]), ('Sequential', 'Delayed'))
     # Save the figure and show
+    plt.xlabel("Chunksizes (MB)")
     plt.tight_layout()
     plt.savefig('chunk_seq_del_graph.png')
-    plt.show()
+    #plt.show()
 
     #####Bandwith#################
     bandwithseq = []
@@ -253,7 +254,16 @@ if __name__ =='__main__':
     bandwithseq = np.array(bandwithseq)
     bandwithdel = np.array(bandwithdel)
 
-    x_pos = np.arange(len(chunkseq))
+    indices = np.arange(1,len(bandwithseq))
+    bandwithseq = np.take(bandwithseq,indices)
+    bandwithdel = np.take(bandwithdel,indices)
+    print("bandwith seq", bandwithseq)
+    print("bandwith del", bandwithdel)
+    print(len(bandwithseq))
+    print(len(bandwithdel))
+
+    x_pos = np.arange(len(bandwithseq))
+    print(x_pos)
     width = 0.35 #width of the bars
     fig, ax  = plt.subplots()
     bandwithseqbar = ax.bar(x_pos, bandwithseq, width, align='center', alpha=0.5, ecolor='black', capsize=10)
@@ -261,23 +271,22 @@ if __name__ =='__main__':
     ax.set_ylabel('Time (ms)')
     ax.set_xticks(x_pos + width / 2)
     #ax.set_xticklabels(titles)
-    ax.set_xticklabels(bandwith)
+
+    ax.set_xticklabels(np.take(bandwith, indices))
     ax.set_title('Bandwith')
     ax.yaxis.grid(True)
     ax.legend((bandwithseqbar[0], bandwithdelbar[0]), ('Sequential', 'Delayed'))
     # Save the figure and show
+    plt.xlabel("bandwith (mpbs)")
     plt.tight_layout()
     plt.savefig('bandwith_seq_del_graph.png')
-    plt.show()
+    #plt.show()
 
 
     #####RTT########################
-
-
-
     titles = []
-    rttseqmeans = [] #np.array(np.zeros(repetitions*2))
-    rttseqstds = [] #np.array(np.zeros(repetitions*2))
+    rttseqmeans = []
+    rttseqstds = []
     rttdelmeans = []
     rttdelstds = []
 
@@ -326,6 +335,7 @@ if __name__ =='__main__':
     ax.yaxis.grid(True)
     ax.legend((seqbar[0], delbar[0]), ('Sequential', 'Delayed'))
     # Save the figure and show
+    plt.xlabel("Round-trip time (ms)")
     plt.tight_layout()
     plt.savefig('rtt_seq_del_graph(errorbars).png')
-    plt.show()
+    #plt.show()

@@ -82,7 +82,7 @@ class Server(Thread):
                     # print(int(timedif.total_seconds() * 1000))
                     if(int(timedif.total_seconds() * 1000) > 100):
                         ack = "ack"
-                        print(self.getName() + ": timeout expired!")
+                        #print(self.getName() + ": timeout expired!")
                         # print(self.getName() + ": send " + ack)
                         waitingacks = 0
                         self.ackq.put(ack)
