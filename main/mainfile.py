@@ -6,14 +6,16 @@ from threading import Thread
 import queue
 import sys
 import matplotlib.pyplot as plt
+import os
 
 
 if __name__ =='__main__':
     #modes: upload / download
     #schemes: sequential, delayed
+    my_path = os.path.abspath(__file__)
 
     #ARGUMENTS
-    repetitions = 20
+    repetitions = 5
     chunksizes = [1,4,5,8]
     means = [(10,8.8), (50,44), (100,88), (150,132)]
     #stddevs = [8.8, 44, 88, 132]
@@ -222,6 +224,13 @@ if __name__ =='__main__':
     print("chunksize del", chunkdel)
     chunkseq = np.array(chunkseq)
     chunkdel = np.array(chunkdel)
+    #Make array for percentage change above bars
+    chunkdif = []
+    for i in range(len(chunkseq)):
+        x = (chunkdel[i] / chunkseq[i] )
+        x = "{:.2%}".format(x)
+        chunkdif.append(x)
+    chunkdif = np.array(chunkdif)
 
     x_pos = np.arange(len(chunkseq))
     width = 0.35 #width of the bars
@@ -235,10 +244,12 @@ if __name__ =='__main__':
     ax.set_title('Chunksizes')
     ax.yaxis.grid(True)
     ax.legend((chunkseqbar[0], chunkdelbar[0]), ('Sequential', 'Delayed'))
+    for a,b,c in zip(x_pos + (width / 2), chunkdel, chunkdif):
+        plt.text(a, b, c)
     # Save the figure and show
     plt.xlabel("Chunksizes (MB)")
     plt.tight_layout()
-    plt.savefig('chunk_seq_del_graph.png')
+    plt.savefig('graphs/chunk_seq_del_graph.png')
     #plt.show()
 
     #####Bandwith#################
@@ -254,9 +265,18 @@ if __name__ =='__main__':
     bandwithseq = np.array(bandwithseq)
     bandwithdel = np.array(bandwithdel)
 
+    bandwithdif = []
+    for i in range(len(bandwithseq)):
+        x = (bandwithdel[i] / bandwithseq[i] )
+        x = "{:.2%}".format(x)
+        bandwithdif.append(x)
+    bandwithdif = np.array(bandwithdif)
+
     indices = np.arange(1,len(bandwithseq))
     bandwithseq = np.take(bandwithseq,indices)
     bandwithdel = np.take(bandwithdel,indices)
+    bandwithdif = np.take(bandwithdif,indices)
+
     print("bandwith seq", bandwithseq)
     print("bandwith del", bandwithdel)
     print(len(bandwithseq))
@@ -277,9 +297,11 @@ if __name__ =='__main__':
     ax.yaxis.grid(True)
     ax.legend((bandwithseqbar[0], bandwithdelbar[0]), ('Sequential', 'Delayed'))
     # Save the figure and show
+    for a,b,c in zip(x_pos + (width / 2), bandwithdel, bandwithdif):
+        plt.text(a, b, c)
     plt.xlabel("bandwith (mpbs)")
     plt.tight_layout()
-    plt.savefig('bandwith_seq_del_graph.png')
+    plt.savefig('graphs/bandwith_seq_del_graph.png')
     #plt.show()
 
 
@@ -316,6 +338,14 @@ if __name__ =='__main__':
     rttseqstds = np.array(rttseqstds)
     rttdelstds = np.array(rttdelstds)
 
+    #Make array for percentage change above bars
+    rttdif = []
+    for i in range(len(rttseqmeans)):
+        x = (rttdelmeans[i] / rttseqmeans[i] )
+        x = "{:.2%}".format(x)
+        rttdif.append(x)
+    rttdif = np.array(rttdif)
+
     print(titles)
     print("rtt seq means" , rttseqmeans)
     print("rtt del means", rttdelmeans)
@@ -334,8 +364,10 @@ if __name__ =='__main__':
     ax.set_title('RTTs')
     ax.yaxis.grid(True)
     ax.legend((seqbar[0], delbar[0]), ('Sequential', 'Delayed'))
+    for a,b,c in zip(x_pos + (width / 2), rttseqmeans, rttdif):
+        plt.text(a, b, c)
     # Save the figure and show
     plt.xlabel("Round-trip time (ms)")
     plt.tight_layout()
-    plt.savefig('rtt_seq_del_graph(errorbars).png')
+    plt.savefig('graphs/rtt_seq_del_graph(errorbars).png')
     #plt.show()
