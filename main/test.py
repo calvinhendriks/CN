@@ -4,17 +4,37 @@ import math as mth
 import numpy as np
 
 lower, upper = 1, 1000
-mu, sigma = 12, 10.56
+mu, sigma = 100, 88
+scale = mu
+
 X = stats.truncnorm(
     (lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma)
 N = stats.norm(loc=mu, scale=sigma)
-E = stats.expon(loc = mu, scale = sigma)
+E = stats.truncexpon(loc = lower, b = (upper-lower) / scale , scale = scale)
 
-fig, ax = plt.subplots(3, sharex=True)
-ax[0].hist(X.rvs(10000), density=True)
-ax[1].hist(N.rvs(10000), density=True)
-ax[2].hist(E.rvs(10000), density=False, bins=1000)
-plt.show()
+mean, var = stats.truncexpon.stats(loc= lower , b = (upper - lower) / scale, scale = scale, moments = 'mv')
+print(mean,var,mth.sqrt(var))
+mean, var = stats.norm.stats(loc=mu, scale=sigma)
+print(mean,var,mth.sqrt(var))
+
+
+fig, ax = plt.subplots(3, sharex=False)
+ax[0].hist(N.rvs(1000000), density=True, bins=1000)
+
+ax[0].set_title('Normal distribution')
+#ax[0].set_xlim(-50,100)
+ax[1].hist(X.rvs(1000000), density=True, bins=1000)
+ax[1].set_title('Truncated normal distrubtion (1,1000)')
+
+n, bins, patches  = ax[2].hist(E.rvs(1000000), density=True, bins=1000)
+print(n)
+print(bins)
+ax[2].set_xlim(-5,400)
+ax[2].set_title('Truncated exponential distrubtion (1,1000)')
+
+plt.tight_layout()
+#plt.show()
+plt.savefig('graphs/histograms.png')
 
 
 

@@ -10,7 +10,7 @@ from datetime import datetime
 from scipy.stats import truncnorm
 
 class Server(Thread):
-    def __init__(self, chunksize, ackq, clientq, serverq, mode, scheme, rtt, load, ackdelay = 1, bandwith = 54):
+    def __init__(self, chunksize, ackq, clientq, serverq, mode, scheme, rtt, load, ackdelay = 1, bandwith = 26):
         super(Server,self).__init__()
         # print("Server: initiliazed")
         self.filesize = 100
