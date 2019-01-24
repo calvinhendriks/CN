@@ -15,7 +15,7 @@ if __name__ =='__main__':
     my_path = os.path.abspath(__file__)
 
     #ARGUMENTS
-    repetitions = 1
+    repetitions = 5
     chunksizes = [1,4,5,8]
     means = [(10,8.8), (50,44), (100,88), (150,132)]
     #stddevs = [8.8, 44, 88, 132]
@@ -352,7 +352,7 @@ if __name__ =='__main__':
     ax.set_xticks(x_pos + width / 2)
     #ax.set_xticklabels(titles)
     ax.set_xticklabels(chunksizes)
-    ax.set_title('Chunksizes')
+    ax.set_title('Time to send 100MB file for different chunk sizes')
     ax.yaxis.grid(True)
     ax.legend((chunkseqbar[0], chunkdelbar[0]), ('Sequential', 'Delayed'))
     for a,b,c in zip(x_pos + (width / 2), chunkdel, chunkdif):
@@ -404,13 +404,13 @@ if __name__ =='__main__':
     #ax.set_xticklabels(titles)
 
     ax.set_xticklabels(np.take(bandwith, indices))
-    ax.set_title('Bandwith')
+    ax.set_title('Time to send 100MB file for different bandwidth values')
     ax.yaxis.grid(True)
     ax.legend((bandwithseqbar[0], bandwithdelbar[0]), ('Sequential', 'Delayed'))
     # Save the figure and show
     for a,b,c in zip(x_pos + (width / 2), bandwithdel, bandwithdif):
         plt.text(a, b, c)
-    plt.xlabel("Bandwith (mpbs)")
+    plt.xlabel("Bandwidth (mbps)")
     plt.tight_layout()
     plt.savefig('graphs/bandwith_seq_del_graph(inc2).png')
     #plt.show()
@@ -487,11 +487,16 @@ if __name__ =='__main__':
     rttdifexp = np.array(rttdifexp)
 
     print(titles)
-    print("rtt seq means" , rttseqmeans)
-    print("rtt del means", rttdelmeans)
-    print("rtt seq std", rttseqstds)
-    print("rtt del std", rttdelstds)
+    print("rtt seq means norm" , rttseqmeans)
+    print("rtt del means norm", rttdelmeans)
+    print("rtt seq stds norm", rttseqstds)
+    print("rtt del stds norm", rttdelstds)
 
+
+    print("rtt seq means exp" , rttseqmeansexp)
+    print("rtt del means exp", rttdelmeansexp)
+    print("rtt seq stds exp", rttseqstdsexp)
+    print("rtt del stds exp", rttdelstdsexp)
 
     x_pos = np.arange(len(rttseqmeans))
     width = 0.35 #width of the bars
@@ -502,7 +507,7 @@ if __name__ =='__main__':
     ax.set_xticks(x_pos + width / 2)
     #ax.set_xticklabels(titles)
     ax.set_xticklabels(('10', '50', '100', '150'))
-    ax.set_title('RTT (Normal Distribution)')
+    ax.set_title('Time to send 100MB file for different RTT means (Norm)')
     ax.yaxis.grid(True)
     ax.legend((seqbar[0], delbar[0]), ('Sequential', 'Delayed'))
     for a,b,c in zip(x_pos + (width / 2), rttseqmeans, rttdif):
@@ -523,7 +528,7 @@ if __name__ =='__main__':
     ax.set_xticks(x_pos + width / 2)
     #ax.set_xticklabels(titles)
     ax.set_xticklabels(('10', '50', '100', '150'))
-    ax.set_title('RTT (Exponential distribution)')
+    ax.set_title('Time to send 100MB file for different RTT means (Exp)')
     ax.yaxis.grid(True)
     ax.legend((seqbar[0], delbar[0]), ('Sequential', 'Delayed'))
     for a,b,c in zip(x_pos + (width / 2), rttseqmeansexp, rttdifexp):
